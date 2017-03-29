@@ -46,5 +46,5 @@ fn check_utf8mb4(reader: &mut Read) {
         }
     }
 
-    print!("Found {} UTF-8 characters that are 4 bytes wide.", found);
+    println!("Found {} UTF-8 characters that are 4 bytes wide.", found);
 }
