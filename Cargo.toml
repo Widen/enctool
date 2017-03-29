@@ -1,0 +1,7 @@
+[package]
+name = "enctool"
+version = "0.1.0"
+authors = ["Stephen M. Coakley <me@stephencoakley.com>"]
+
+[dependencies]
+getopts = "0.2"
