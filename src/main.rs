@@ -12,31 +12,47 @@ use std::str;
 fn main() {
     let mut options = Options::new();
 
-    options.optflag("v", "validate", "Verify the file is valid in the given encoding.");
+    options.optflag("V", "validate", "Verify the file is valid in the given encoding.");
     options.optflag("", "check-utf8mb4", "Check for 4-byte characters in a UTF-8 file.");
     options.optopt("e", "encoding", "Specify the file encoding. Defaults to UTF-8.", "ENCODING");
     options.optopt("f", "file", "A file to parse, otherwise stdin is used.", "FILE");
+    options.optflag("l", "list", "List all supported encodings.");
     options.optflag("h", "help", "Show this help message.");
+    options.optflag("v", "version", "Show the program version.");
 
     let matches = match options.parse(env::args()) {
         Ok(m) => m,
         Err(e) => panic!(e.to_string()),
     };
 
-    if matches.opt_present("h") {
+    if matches.opt_present("help") {
         let short = options.short_usage("enctool");
         println!("Widen encoding tool\n\n{}", options.usage(&short));
         return;
     }
 
+    if matches.opt_present("version") {
+        println!("enctool {}", env!("CARGO_PKG_VERSION"));
+        return;
+    }
+
+    if matches.opt_present("list") {
+        for encoding in encoding::all::encodings() {
+            if let Some(name) = encoding.whatwg_name() {
+                println!("{}", name);
+            }
+        }
+        return;
+    }
+
     // Get the input stream.
-    let mut input: Box<Read> = match matches.opt_str("f") {
+    let mut input: Box<Read> = match matches.opt_str("file") {
         Some(filename) => Box::new(File::open(filename).expect("given file is not readable")),
         None => Box::new(stdin()),
     };
 
     // Get the encoding to use.
-    let encoding = match matches.opt_str("e").map(|s| s.to_lowercase()).as_ref().map(|s| s as &str) {
+    let encoding = match matches.opt_str("encoding").map(|s| s.to_lowercase()).as_ref().map(|s| s as &str) {
         Some("utf16") => encoding::all::UTF_16LE,
         Some(name) => {
             match encoding::label::encoding_from_whatwg_label(name) {
@@ -50,7 +66,7 @@ fn main() {
         None => encoding::all::UTF_8,
     };
 
-    if matches.opt_present("v") {
+    if matches.opt_present("validate") {
         validate(&mut input, encoding);
         return;
     }
