@@ -5,7 +5,7 @@ use encoding::types::*;
 use getopts::*;
 use std::env;
 use std::fs::File;
-use std::io::{BufRead, BufReader, Read, stdin};
+use std::io::{self, BufRead, BufReader, Read, Write};
 use std::str;
 
 
@@ -14,8 +14,10 @@ fn main() {
 
     options.optflag("V", "validate", "Verify the file is valid in the given encoding.");
     options.optflag("", "check-utf8mb4", "Check for 4-byte characters in a UTF-8 file.");
-    options.optopt("e", "encoding", "Specify the file encoding. Defaults to UTF-8.", "ENCODING");
-    options.optopt("f", "file", "A file to parse, otherwise stdin is used.", "FILE");
+    options.optopt("c", "convert-to", "Convert the input to a given output encoding.", "ENCODING");
+    options.optopt("e", "encoding", "Specify the input encoding. Defaults to UTF-8.", "ENCODING");
+    options.optopt("i", "input", "A file to parse, otherwise stdin is used.", "FILE");
+    options.optopt("o", "output", "File to write any converted output to.", "FILE");
     options.optflag("l", "list", "List all supported encodings.");
     options.optflag("h", "help", "Show this help message.");
     options.optflag("v", "version", "Show the program version.");
@@ -46,16 +48,15 @@ fn main() {
     }
 
     // Get the input stream.
-    let mut input: Box<Read> = match matches.opt_str("file") {
+    let mut input: Box<Read> = match matches.opt_str("input") {
         Some(filename) => Box::new(File::open(filename).expect("given file is not readable")),
-        None => Box::new(stdin()),
+        None => Box::new(io::stdin()),
     };
 
     // Get the encoding to use.
-    let encoding = match matches.opt_str("encoding").map(|s| s.to_lowercase()).as_ref().map(|s| s as &str) {
-        Some("utf16") => encoding::all::UTF_16LE,
+    let encoding = match matches.opt_str("encoding") {
         Some(name) => {
-            match encoding::label::encoding_from_whatwg_label(name) {
+            match get_encoding(&name) {
                 Some(encoding) => encoding,
                 None => {
                     println!("Unknown encoding: {}", name);
@@ -76,9 +77,29 @@ fn main() {
         return;
     }
 
+    // Get the encoding to use.
+    if let Some(name) = matches.opt_str("convert-to") {
+        let to_encoding = match get_encoding(&name) {
+            Some(encoding) => encoding,
+            None => {
+                println!("Unknown encoding: {}", name);
+                return;
+            },
+        };
+
+        let mut output: Box<Write> = match matches.opt_str("output") {
+            Some(filename) => Box::new(File::create(filename).expect("given file is not writable")),
+            None => Box::new(io::stdout()),
+        };
+
+        convert(&mut input, encoding, &mut output, to_encoding);
+        return;
+    }
+
     println!("No command given.");
 }
 
+/// Validate an input stream against an encoding.
 fn validate(reader: &mut Read, encoding: &Encoding) {
     let encoding_name = encoding.whatwg_name().unwrap_or("");
     let mut reader = BufReader::new(reader);
@@ -92,8 +113,6 @@ fn validate(reader: &mut Read, encoding: &Encoding) {
             break;
         }
 
-        line += 1;
-
         // Validate the line using strict decoding.
         if encoding.decode(&buf, DecoderTrap::Strict).is_err() {
             found += 1;
@@ -106,9 +125,53 @@ fn validate(reader: &mut Read, encoding: &Encoding) {
 
             print!("line {}: invalid text: {}", line, lossy);
         }
+
+        line += 1;
     }
 
     println!("Found {} lines containing invalid text for encoding {}.", found, encoding_name);
+}
+
+/// Convert an input stream from an encoding to an output stream in a different encoding.
+fn convert(reader: &mut Read, src: &Encoding, writer: &mut Write, dest: &Encoding) {
+    let mut reader = BufReader::new(reader);
+    let mut line = 1;
+
+    loop {
+        // Read a line from the input.
+        let mut src_buf = Vec::new();
+        if reader.read_until(b'\n', &mut src_buf).unwrap() == 0 {
+            break;
+        }
+
+        // Decode the line using the src encoding.
+        let text = match src.decode(&src_buf, DecoderTrap::Strict) {
+            Ok(string) => string,
+            Err(e) => {
+                println!("line {}: input error: {}", line, e);
+                break;
+            },
+        };
+
+        // Encode the line using the dest encoding.
+        let dest_buf = match dest.encode(&text, EncoderTrap::Strict) {
+            Ok(buf) => buf,
+            Err(e) => {
+                println!("line {}: output error: {}", line, e);
+                break;
+            },
+        };
+
+        // Write the converted bytes to the output.
+        if let Err(e) = writer.write_all(&dest_buf) {
+            println!("line {}: write error: {}", line, e);
+            break;
+        }
+
+        line += 1;
+    }
+
+    println!("Converted {} lines.", line);
 }
 
 fn check_utf8mb4(reader: &mut Read) {
@@ -126,4 +189,13 @@ fn check_utf8mb4(reader: &mut Read) {
     }
 
     println!("Found {} UTF-8 characters that are 4 bytes wide.", found);
+}
+
+fn get_encoding<S: AsRef<str>>(name: S) -> Option<EncodingRef> {
+    let name = name.as_ref().to_lowercase();
+
+    match name.as_str() {
+        "utf16" => Some(encoding::all::UTF_16LE),
+        _ => encoding::label::encoding_from_whatwg_label(&name),
+    }
 }
