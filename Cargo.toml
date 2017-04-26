@@ -1,6 +1,6 @@
 [package]
 name = "enctool"
-version = "0.2.0"
+version = "0.3.0"
 authors = ["Stephen M. Coakley <scoakley@widen.com>"]
 license = "MIT"
 

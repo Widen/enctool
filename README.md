@@ -9,7 +9,7 @@ enctool is written in Rust and can be built using Cargo.
     cargo build
 
 ## Usage
-enctool can be given various commands to perform encoding checks and conversions. Ususally the syntax is
+enctool can be given various commands to perform encoding checks and conversions. Usually the syntax is
 
     enctool [--command-flag] [-f FILE]
 
