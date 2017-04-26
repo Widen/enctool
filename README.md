@@ -1,6 +1,8 @@
 # enctool
 Utility for checking character encodings in files and streams of text.
 
+[![Travis](https://img.shields.io/travis/rust-lang/rust.svg)](https://travis-ci.org/Widen/enctool)
+
 ## Compiling
 enctool is written in Rust and can be built using Cargo.
 
