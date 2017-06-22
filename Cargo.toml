@@ -7,3 +7,4 @@ license = "MIT"
 [dependencies]
 encoding = "0.2"
 getopts = "0.2"
+uchardet-sys = "2.0.0"
