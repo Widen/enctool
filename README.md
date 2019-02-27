@@ -1,7 +1,10 @@
 # enctool
+
+[![Build Status](https://badge.buildkite.com/9d30549c2aeac3588dd40957549a346ebf15f5d237eedd6682.svg)](https://buildkite.com/widen/enctool)
+
 Utility for checking character encodings in files and streams of text.
 
-[![Travis](https://img.shields.io/travis/rust-lang/rust.svg)](https://travis-ci.org/Widen/enctool)
+Made with :heart: by Widen.
 
 ## Installation
 enctool can be installed from source using the provided Makefile:

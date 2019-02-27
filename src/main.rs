@@ -1,7 +1,3 @@
-extern crate encoding;
-extern crate getopts;
-extern crate uchardet_sys;
-
 mod convert;
 mod guess;
 mod validate;

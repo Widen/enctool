@@ -3,8 +3,9 @@ name = "enctool"
 version = "0.4.0"
 authors = ["Stephen M. Coakley <scoakley@widen.com>"]
 license = "MIT"
+edition = "2018"
 
 [dependencies]
+chardet = "0.2"
 encoding = "0.2"
 getopts = "0.2"
-uchardet-sys = "2.0.0"

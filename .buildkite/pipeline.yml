@@ -1,0 +1,9 @@
+steps:
+  - label: ":rust: Tests"
+    command: "cargo check"
+    agents:
+      queue: builder
+    plugins:
+      docker#v1.1.1:
+        image: rust
+        always-pull: true

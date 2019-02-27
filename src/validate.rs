@@ -1,6 +1,5 @@
 use encoding::types::*;
 use std::io::{BufRead, BufReader, Read};
-use std::str;
 
 
 /// Validate an input stream against an encoding.

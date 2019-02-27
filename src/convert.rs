@@ -1,6 +1,5 @@
 use encoding::types::*;
 use std::io::{BufRead, BufReader, Read, Write};
-use std::str;
 
 
 /// Convert an input stream from an encoding to an output stream in a different encoding.
